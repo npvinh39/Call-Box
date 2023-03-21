@@ -2,6 +2,8 @@ import JsSIP from 'jssip';
 
 const remoteAudio = new window.Audio();
 remoteAudio.autoplay = true;
+var session = null;
+var ua = null;
 var callOptions = {
     mediaConstraints: {
         audio: true, // only audio calls
@@ -10,55 +12,68 @@ var callOptions = {
 };
 
 export function Register() {
-    const socket = new JsSIP.WebSocketInterface('wss://sbc03.tel4vn.com:7444');
-    var bwPhone = new JsSIP.UA({
-        'uri': '101@2-test1.gcalls.vn:50061',
-        'password': 'test1101',
-        'sockets': [socket]
-    });
-    bwPhone.start();
+    // Create our JsSIP instance and run it:
 
-    bwPhone.on("registered", function () {
-        bwPhone.call("0398033985", callOptions);
-    });
+    var socket = new JsSIP.WebSocketInterface('wss://sbc03.tel4vn.com:7444');
+    var configuration = {
+        sockets: [socket],
+        uri: '101@2-test1.gcalls.vn:50061',
+        password: 'test1101'
+    };
 
-    bwPhone.on("newRTCSession", function (data) {
-        var session = data.session; // outgoing call session here
-        console.log(session);
-        var dtmfSender;
-        session.on("confirmed", function () {
-            //the call has connected, and audio is playing
-            var localStream = session.connection.getLocalStreams()[0];
-            dtmfSender = session.connection.createDTMFSender(localStream.getAudioTracks()[0])
-        });
-        session.on("ended", function (e) {
-            //the call has ended
-            console.log("ended", e);
-        });
-        session.on("failed", function (e) {
-            // unable to establish the call
-            console.log("failed", e);
-        });
-        session.on('addstream', function (e) {
-            // set remote audio stream (to listen to remote audio)
-            // remoteAudio is <audio> element on page
-            remoteAudio.src = window.URL.createObjectURL(e.stream);
-            remoteAudio.play();
-        });
+    ua = new JsSIP.UA(configuration);
 
-        //play a DTMF tone (session has method `sendDTMF` too but it doesn't work with Catapult server right)
-        // dtmfSender.insertDTMF("1");
-        // dtmfSender.insertDTMF("#");
+    ua.start()
 
-        //mute call
-        session.mute({ audio: true });
+    // Register callbacks to desired call events
+    var eventHandlers = {
+        'progress': function (e) {
+            console.log('call is in progress');
+        },
+        'failed': function (e) {
+            console.log('call failed with cause: ' + e.data.cause);
+        },
+        'ended': function (e) {
+            console.log('call ended with cause: ' + e.data.cause);
+        },
+        'confirmed': function (e) {
+            console.log('call confirmed');
+        }
+    };
+};
 
-        //unmute call
-        session.unmute({ audio: true });
+export function StartCall(destinationPhoneNumber, isCalling) {
+    // Create our JsSIP instance and run it:
+    Register();
+    var eventHandlers = {
+        'progress': function (e) {
+            console.log('call is in progress');
+            isCalling = true;
+            console.log('calling: ', isCalling);
+        },
+        'failed': function (e) {
+            console.log('call failed with cause: ' + e);
+        },
+        'ended': function (e) {
+            console.log('call ended with cause: ' + e);
+        },
+        'confirmed': function (e) {
+            console.log('call confirmed');
+        }
+    };
 
-        //to hangup the call
-        session.terminate();
+    const options = {
+        'eventHandlers': eventHandlers,
+        'mediaConstraints': { 'audio': true, 'video': false },
+        sessionTimersExpires: 600
+    };
 
+    if (destinationPhoneNumber !== null) {
+        ua.call(destinationPhoneNumber, options);
+        console.log('call to ' + destinationPhoneNumber);
+    }
+};
 
-    })
+export function StopCall() {
+    ua.stop();
 };
