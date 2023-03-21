@@ -7,7 +7,7 @@ export function InputNumber({ phoneNumber, isCalling, setPhoneNumber }) {
             setPhoneNumber(value);
         }
     }
-    console.log('phoneNumber', phoneNumber)
+    // console.log('phoneNumber', phoneNumber)
     return (
         <div>
             {

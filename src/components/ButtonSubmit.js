@@ -2,7 +2,7 @@ import React from 'react';
 import { StopCall, StartCall } from "./index";
 
 export function ButtonSubmit({ phoneNumber, isCalling, setIsCalling, setPhoneNumber }) {
-    console.log('phoneNumber', phoneNumber)
+    // console.log('phoneNumber', phoneNumber)
     return (
         <div>
             {
@@ -21,7 +21,7 @@ export function ButtonSubmit({ phoneNumber, isCalling, setIsCalling, setPhoneNum
                         className="bg-green-500 hover:bg-green-700 text-white text-3xl font-bold py-2 px-36 rounded-3xl shadow-2xl mt-8"
                         onClick={() => {
                             if (phoneNumber.length === 10) {
-                                StartCall(phoneNumber, isCalling);
+                                StartCall(phoneNumber, isCalling, setIsCalling);
                                 setIsCalling(!isCalling);
                             }
                         }}

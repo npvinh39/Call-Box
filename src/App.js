@@ -11,6 +11,7 @@ const arrayNumberPhone = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0',
 function App() {
     const [phoneNumber, setPhoneNumber] = React.useState([]);
     const [isCalling, setIsCalling] = React.useState(false);
+    const [isMute, setIsMute] = React.useState(false);
 
     return (
         <div className="App flex justify-center items-center">
@@ -26,6 +27,8 @@ function App() {
                     isCalling={isCalling}
                     setPhoneNumber={setPhoneNumber}
                     setIsCalling={setIsCalling}
+                    isMute={isMute}
+                    setIsMute={setIsMute}
                 />
                 <ButtonSubmit
                     phoneNumber={phoneNumber}

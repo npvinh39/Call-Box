@@ -25,24 +25,29 @@ export function Register() {
 
     ua.start()
 
-    // Register callbacks to desired call events
-    var eventHandlers = {
-        'progress': function (e) {
-            console.log('call is in progress');
-        },
-        'failed': function (e) {
-            console.log('call failed with cause: ' + e.data.cause);
-        },
-        'ended': function (e) {
-            console.log('call ended with cause: ' + e.data.cause);
-        },
-        'confirmed': function (e) {
-            console.log('call confirmed');
+    ua.on('newRTCSession', function (e) {
+        console.log('RTC Session', e.session)
+        const newSession = e.session;
+        if (session) {
+            session.terminate();
         }
-    };
+        session = newSession;
+        const completeSession = () => {
+            session = null;
+        }
+        session.on('ended', completeSession);
+        session.on('failed', completeSession);
+        session.on('accepted', () => { console.log("accept") });
+        session.on('confirmed', () => {
+            console.log("confirmed");
+        });
+        session.on('addstream', function (e) {
+            console.log("addstream")
+        });
+    });
 };
 
-export function StartCall(destinationPhoneNumber, isCalling) {
+export function StartCall(destinationPhoneNumber, isCalling, setIsCalling) {
     // Create our JsSIP instance and run it:
     Register();
     var eventHandlers = {
@@ -53,14 +58,19 @@ export function StartCall(destinationPhoneNumber, isCalling) {
         },
         'failed': function (e) {
             console.log('call failed with cause: ' + e);
+            setIsCalling(!isCalling);
+            console.log('calling failed: ', isCalling);
         },
         'ended': function (e) {
             console.log('call ended with cause: ' + e);
+            setIsCalling(!isCalling);
+            console.log('callng cancel: ', isCalling);
         },
         'confirmed': function (e) {
             console.log('call confirmed');
         }
     };
+
 
     const options = {
         'eventHandlers': eventHandlers,
@@ -72,8 +82,22 @@ export function StartCall(destinationPhoneNumber, isCalling) {
         ua.call(destinationPhoneNumber, options);
         console.log('call to ' + destinationPhoneNumber);
     }
+    session.connection.addEventListener('addstream', (event) => {
+        console.log(event)
+        remoteAudio.srcObject = event.stream;
+        remoteAudio.play();
+    })
 };
 
 export function StopCall() {
     ua.stop();
 };
+
+export function ToggleMute(setIsMute, isMute) {
+    setIsMute(!isMute);
+    if (session.isMuted().audio) {
+        session.unmute({ audio: true });
+    } else {
+        session.mute({ audio: true });
+    }
+}
